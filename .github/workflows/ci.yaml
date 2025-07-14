@@ -1,0 +1,35 @@
+# Criando arquivo de CI do GitHub Actions
+# Este arquivo configura o GitHub Actions para rodar testes automatizados
+name: ci
+
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.12.3]
+
+    steps:
+      - name: Baixando o código
+        uses: actions/checkout@v4
+
+      - name: Instalando o python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Instalando poetry
+        run: pip install poetry
+
+      - name: Instalando dependências
+        run: poetry update pyproject.toml
+
+      - name: verificando o diretorio atual
+        run: pwd
+        
+      - name: listando os arquivos
+        run: ls -la
+
+      - name: Rodando os testes
+        run: poetry run pytest tests -v
