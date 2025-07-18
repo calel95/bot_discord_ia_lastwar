@@ -83,7 +83,7 @@ load_dotenv()
 ######FUNCIONANDO ABAIXO
 def textHtml():
     # Passo 1: buscar conteúdo da URL
-    url = "https://www.lastwartutorial.com/desert-storm"
+    url = "https://www.lastwartutorial.com"
     response = requests.get(url)
     if response.status_code != 200:
         print("Não foi possível acessar o site.")
@@ -101,10 +101,10 @@ fonte = textHtml()
 
 
 def criar_agente_last_war(fonte_url):
-    lista_urls = [
-        "https://www.lastwartutorial.com/heroes",
-        "https://www.lastwartutorial.com/desert-storm/"
-    ]
+    # lista_urls = [
+    #     "https://www.lastwartutorial.com/heroes",
+    #     "https://www.lastwartutorial.com/desert-storm/"
+    # ]
     fonte = fonte_url
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     #genai.configure(api_key=GEMINI_API_KEY)
@@ -129,8 +129,8 @@ def criar_agente_last_war(fonte_url):
         contents=campo,
         config=types.GenerateContentConfig(
             system_instruction="Você é um assistente especialista no jogo LastWar mobile.  "
-                               f"fonte de dados das repostas : pesquise na internet e use informações do site {lista_urls}. "
-                               "Pegue a url que esta na lista, que tenha alguma semelhanca com o que foi solicitado. Exemplo, se for falado de heroes, pegar a url /heroes, se falar de tempestade do deserto, pegar a url /desert-storm... "
+                               f"fonte de dados das repostas : pesquise na internet e use informações do site {fonte}. "
+                               "Pegue a url que esta na lista, que tenha alguma semelhanca com o que foi solicitado pelo usuario. Exemplo, se for falado de heroes, pegar a url /heroes, se falar de tempestade do deserto, pegar a url /desert-storm... "
                                "Se não encontrar informações, responda que não sabe. Não inventa informações falsas. ",
         
     ),
@@ -139,8 +139,27 @@ def criar_agente_last_war(fonte_url):
     print("\nResposta do Agente LastWar:")
     print(response.text)
     print("-" * 50)
+    return response.text
+
+def discord_bot():
+    load_dotenv()
+    DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = discord.Client(intents=intents)
+
+    @bot.event
+    async def on_ready():
+        print(f"Logado como {bot.user}")
+
+    @bot.event
+    async def on_message(message):
+        if message.author == bot.user:
+            return
 
 if __name__ == "__main__":
     print("Bem-vindo ao Agente LastWar com Gemini e busca na web!")
     #print(textHtml())
     criar_agente_last_war(fonte_url=fonte)
+

@@ -7,6 +7,7 @@ from google.genai import types
 from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
+from utils import criar_agente_last_war,textHtml
 
 #print(dir(genai))
 load_dotenv()
@@ -68,20 +69,9 @@ async def on_message(message):
             await message.channel.send(f"Olá {message.author.mention}! Me perguntou: '{question}'")
             await message.channel.send("Estou processando sua pergunta sobre Last War: Mobile...")
             
-            # --- INTEGRAÇÃO COM A IA (RAG) AQUI ---
             try:
-                # 1. Recuperação (Retrieval)
-                # results = retriever.get_relevant_documents(question)
-                # context = "\n".join([doc.page_content for doc in results])
-                # print(f"Contexto recuperado: {context[:200]}...") # Para depuração
-
-                # 2. Geração (Generation) - Usando o LLM
-                # prompt_for_llm = f"Com base nas seguintes informações sobre Last War: Mobile:\n{context}\n\nResponda à pergunta: {question}"
-                # response = model.generate_content(prompt_for_llm)
-                # bot_answer = response.text
-
-                # Resposta de teste (substitua pela resposta da IA)
-                bot_answer = "Essa é uma ótima pergunta sobre Last War: Mobile! A IA ainda está aprendendo a responder, mas logo terei a resposta para você!"
+                bot_answer = criar_agente_last_war(textHtml(), campo=question)
+                #bot_answer = "Essa é uma ótima pergunta sobre Last War: Mobile! A IA ainda está aprendendo a responder, mas logo terei a resposta para você!"
                 
                 await message.channel.send(f"{message.author.mention}, aqui está a resposta: {bot_answer}")
 
@@ -98,7 +88,7 @@ async def on_message(message):
 async def ping(ctx):
     """Responde com 'Pong!' para testar se o bot está online."""
     await ctx.send('Testado com sucesso!!')
-
+489837
 # --- Inicia o Bot ---
 if __name__ == "__main__":
     if DISCORD_TOKEN:
