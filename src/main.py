@@ -20,8 +20,10 @@ def t2():
     for a_tag in soup.find_all("a", href=True):
         href = a_tag['href']
         # Filtrar apenas links internos relevantes do menu
-        if any(section in href for section in ['heroes', 'squads', 'buildings']):
-            full_url = urljoin(base_url, href)
+    #if any(section in href for section in ['heroes', 'squads', 'buildings']):
+        full_url = urljoin(base_url, href)
+        if  ".com/" in full_url and not "#" in full_url and not "play.google.com" in full_url and not "apps.apple.com" in full_url:
+            #print(full_url)
             menu_links.append(full_url)
 
     #print(menu_links)
@@ -38,7 +40,7 @@ def t2():
                 texto = section.get_text(strip=True)
                 if texto:  # evitar escrever vazios
                     arquivo.write(texto + "\n\n")
-                    print(texto)  # se quiser ver o que está salvando
+                    #print(texto)  # se quiser ver o que está salvando
 
 
 def criar_agente_last_war():
