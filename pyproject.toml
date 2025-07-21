@@ -18,6 +18,7 @@ sentry-sdk = "^2.32.0"
 discord-py = "^2.5.2"
 bs4 = "^0.0.2"
 google-genai = "^1.25.0"
+pathlib = "^1.0.1"
 
 
 [build-system]

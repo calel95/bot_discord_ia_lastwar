@@ -1,4 +1,5 @@
 import os
+import sys
 from dotenv import load_dotenv
 from urllib.parse import urljoin
 from google import genai
@@ -7,11 +8,16 @@ from bs4 import BeautifulSoup
 import requests
 import csv
 import re
+from pathlib import Path
+
 
 # --- Configuração da API Key ---
 load_dotenv()
 
-def t2():
+def extract_content_full_urls():
+    """
+    Extrai conteúdo de URLs do site Last War Tutorial e salva em arquivos de texto.
+    """
     base_url = "https://www.lastwartutorial.com"
     response = requests.get(base_url)
     soup = BeautifulSoup(response.text, "html.parser")
@@ -42,22 +48,49 @@ def t2():
                     arquivo.write(texto + "\n\n")
                     #print(texto)  # se quiser ver o que está salvando
 
+def carrega_arquivos_como_fonte():
+    
+    caminho_pasta = Path('./data')
+
+    arquivos = [file.name for file in caminho_pasta.iterdir() if file.is_file()]
+    arquivos_carregados = []
+    client = genai.Client()
+
+
+    for file in arquivos:
+        uploaded_file = client.files.upload(file=f"{caminho_pasta}/{file}", config={"mime_type": "text/plain"})
+        print(f"Arquivo {file} carregado como '{uploaded_file.name}'.  carregado com sucesso!")
+        #sys.stdout.flush()
+        arquivos_carregados.append(uploaded_file)
+    return arquivos_carregados
+    
 
 def criar_agente_last_war():
+    """
+    Cria um agente LastWar que responde perguntas sobre o jogo Last War: Survival usando a API Gemini.
+    """
+    client = genai.Client()
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel("gemini-2.5-flash")
+    arquivos_existentes = client.files.list()
+
+    if not arquivos_existentes:
+        print("Nenhum arquivo carregado. Carregando arquivos...")
+        arquivos_existentes = carrega_arquivos_como_fonte()
 
     campo = input("Digite sua pergunta sobre LastWar: ")
 
     prompt = (
-        "Você é um assistente e sabe tudo sobre o jogo Last War: Survival. "
-        "Tudo que perguntarem sobre o jogo, você irá responder. "
-        f"Pergunta do usuario: {campo}"
+        "Você é um especialista em Last War: Survival. "
+        "Responda baseado APENAS nas informações dos documentos fornecidos. "
+        f"Pergunta: {campo}"
     )
 
+    content_parts = [prompt] + arquivos_existentes
+
     response = model.generate_content(
-        prompt,
+        content_parts,
         generation_config={
             #"max_output_tokens": 500,
             "temperature": 0.7,
@@ -69,10 +102,24 @@ def criar_agente_last_war():
     print(resposta_chat)
     print("-" * 50)
 
+def remover_todos_arquivos():
+
+    client = genai.Client()
+    arquivos = client.files.list()
+    print(f"Encontrados {len(arquivos)} arquivos...")
+    for arquivo in arquivos:
+        print(arquivo.name)
+
+    confirmacao = input("Deseja remover todos os arquivos? (s/n): ")
+    if confirmacao.lower() == 's':
+        for arquivo in arquivos:
+            client.files.delete(arquivo.name)
+            print(f"Arquivo {arquivo.name} removido com sucesso!")
 
 if __name__ == "__main__":
     print("Bem-vindo ao Agente LastWar com Gemini!")
-    t2()
+    #extract_content_full_urls()
+    carrega_arquivos_como_fonte()
 
     # conteudo = t2()
     # nome_do_arquivo = "data/meu_arquivo.txt"
