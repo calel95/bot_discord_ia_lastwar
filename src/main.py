@@ -10,7 +10,7 @@ import csv
 import re
 from pathlib import Path
 
-
+#print(dir(genai))
 # --- Configuração da API Key ---
 load_dotenv()
 
@@ -69,11 +69,12 @@ def criar_agente_last_war():
     """
     Cria um agente LastWar que responde perguntas sobre o jogo Last War: Survival usando a API Gemini.
     """
-    client = genai.Client()
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel("gemini-2.5-flash")
-    arquivos_existentes = client.files.list()
+    #genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    #model = genai.GenerativeModel("gemini-2.5-flash")
+    arquivos_existentes = list(client.files.list())
+    #print(arquivos_existentes)
 
     if not arquivos_existentes:
         print("Nenhum arquivo carregado. Carregando arquivos...")
@@ -89,9 +90,10 @@ def criar_agente_last_war():
 
     content_parts = [prompt] + arquivos_existentes
 
-    response = model.generate_content(
-        content_parts,
-        generation_config={
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=content_parts,
+        config={           
             #"max_output_tokens": 500,
             "temperature": 0.7,
         }
@@ -118,8 +120,8 @@ def remover_todos_arquivos():
 
 if __name__ == "__main__":
     print("Bem-vindo ao Agente LastWar com Gemini!")
-    #extract_content_full_urls()
-    carrega_arquivos_como_fonte()
+    criar_agente_last_war()
+    #carrega_arquivos_como_fonte()
 
     # conteudo = t2()
     # nome_do_arquivo = "data/meu_arquivo.txt"
