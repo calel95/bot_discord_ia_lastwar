@@ -7,7 +7,7 @@ from google.genai import types
 from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
-from utils import criar_agente_last_war,textHtml
+from main import *
 
 #print(dir(genai))
 load_dotenv()
@@ -70,7 +70,7 @@ async def on_message(message):
             await message.channel.send("Estou processando sua pergunta sobre Last War: Mobile...")
             
             try:
-                bot_answer = criar_agente_last_war(textHtml(), campo=question)
+                bot_answer = criar_agente_last_war(question=question)
                 #bot_answer = "Essa é uma ótima pergunta sobre Last War: Mobile! A IA ainda está aprendendo a responder, mas logo terei a resposta para você!"
                 
                 await message.channel.send(f"{message.author.mention}, aqui está a resposta: {bot_answer}")
@@ -88,7 +88,7 @@ async def on_message(message):
 async def ping(ctx):
     """Responde com 'Pong!' para testar se o bot está online."""
     await ctx.send('Testado com sucesso!!')
-489837
+
 # --- Inicia o Bot ---
 if __name__ == "__main__":
     if DISCORD_TOKEN:

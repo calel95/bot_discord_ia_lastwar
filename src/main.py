@@ -9,10 +9,14 @@ import requests
 import csv
 import re
 from pathlib import Path
+import discord
+from discord.ext import commands
 
 #print(dir(genai))
 # --- Configuração da API Key ---
 load_dotenv()
+
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 def extract_content_full_urls():
     """
@@ -34,11 +38,14 @@ def extract_content_full_urls():
 
     #print(menu_links)
 
-    for url in menu_links:
+    for  url in menu_links:
         response = requests.get(url)
         section_soup = BeautifulSoup(response.text, "html.parser")
         #print(section_soup) #pega todo o html da pagina principal
+       
         trata_nome_url = (url.split('.com/', 1)[1]).replace('/', '')
+        if not trata_nome_url:
+            trata_nome_url = "index"
         nome_do_arquivo = f"data/{trata_nome_url}.txt"
 
         with open(nome_do_arquivo, "w", encoding="utf-8") as arquivo:
@@ -47,6 +54,8 @@ def extract_content_full_urls():
                 if texto:  # evitar escrever vazios
                     arquivo.write(texto + "\n\n")
                     #print(texto)  # se quiser ver o que está salvando
+
+        print(f"Arquivo '{nome_do_arquivo}' salvo com sucesso!")
 
 def carrega_arquivos_como_fonte():
     
@@ -65,9 +74,15 @@ def carrega_arquivos_como_fonte():
     return arquivos_carregados
     
 
-def criar_agente_last_war():
+def criar_agente_last_war(question: str):
     """
-    Cria um agente LastWar que responde perguntas sobre o jogo Last War: Survival usando a API Gemini.
+    Cria um agente LastWar que responde perguntas sobre o jogo Last War: Survival
+    usando a API Gemini.
+    A função espera que os dados de base já estejam carregados no Gemini File API. Qualquer coisa enviar os dados local antes
+    Args:
+        campo (str): A pergunta do usuário.
+    Returns:
+        str: A resposta gerada pelo agente Gemini.
     """
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     #genai.configure(api_key=GEMINI_API_KEY)
@@ -80,12 +95,13 @@ def criar_agente_last_war():
         print("Nenhum arquivo carregado. Carregando arquivos...")
         arquivos_existentes = carrega_arquivos_como_fonte()
 
-    campo = input("Digite sua pergunta sobre LastWar: ")
+    print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
+    #question = input("Digite sua pergunta sobre LastWar: ")
 
     prompt = (
         "Você é um especialista em Last War: Survival. "
         "Responda baseado APENAS nas informações dos documentos fornecidos. "
-        f"Pergunta: {campo}"
+        f"Pergunta: {question}"
     )
 
     content_parts = [prompt] + arquivos_existentes
@@ -104,8 +120,13 @@ def criar_agente_last_war():
     print(resposta_chat)
     print("-" * 50)
 
-def remover_todos_arquivos():
-
+    return resposta_chat
+def remover_todos_arquivos_gemini():
+    """
+    Remove todos os arquivos carregados no Gemini File API.
+    Ação requer confirmação do usuário no console.
+    """
+    
     client = genai.Client()
     arquivos = client.files.list()
     print(f"Encontrados {len(arquivos)} arquivos...")
@@ -118,10 +139,57 @@ def remover_todos_arquivos():
             client.files.delete(arquivo.name)
             print(f"Arquivo {arquivo.name} removido com sucesso!")
 
+intents = discord.Intents.default()
+intents.message_content = True
+intents.presences = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    """Evento que é disparado quando o bot se conecta ao Discord."""
+    print(f'Bot logado como {bot.user.name} ({bot.user.id})')
+    print('Pronto para receber comandos!')
+
+@bot.event
+async def on_message(message):
+    """Evento que é disparado quando uma mensagem é enviada em qualquer canal."""
+    if message.author == bot.user:
+        return
+
+    if bot.user.mentioned_in(message) and not message.mention_everyone:
+        question = message.content.replace(f'<@{bot.user.id}>', '').strip()
+        if question:
+            await message.channel.send(f"Olá {message.author.mention}! Me perguntou: '{question}'")
+            await message.channel.send("Estou processando sua pergunta sobre Last War: Mobile...")
+
+            try:
+                # Use sua função de IA aqui
+                bot_answer = criar_agente_last_war(question=question)
+                await message.channel.send(f"{message.author.mention}, aqui está a resposta: {bot_answer}")
+
+            except Exception as e:
+                await message.channel.send(f"Desculpe, {message.author.mention}, houve um erro ao processar sua pergunta: `{e}`")
+                print(f"Erro na IA: {e}")
+        return
+
+    await bot.process_commands(message)
+
+@bot.command(name='teste')
+async def ping(ctx):
+    """
+    Comando de teste para verificar se o bot está online e respondendo.
+    Uso: !teste
+    """
+    await ctx.send('Testado com sucesso!!')
+
 if __name__ == "__main__":
     print("Bem-vindo ao Agente LastWar com Gemini!")
-    criar_agente_last_war()
+    # if DISCORD_TOKEN:
+    #     bot.run(DISCORD_TOKEN)
+    #criar_agente_last_war()
     #carrega_arquivos_como_fonte()
+    extract_content_full_urls()
 
     # conteudo = t2()
     # nome_do_arquivo = "data/meu_arquivo.txt"
