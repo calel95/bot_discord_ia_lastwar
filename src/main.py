@@ -54,7 +54,7 @@ def extract_content_video_youtube(channel_id=None, video_urls=None, max_videos=2
         video_urls (list): Lista de URLs de vídeos específicos (opcional)
         max_videos (int): Número máximo de vídeos para processar do canal
     """
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    #GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     client = genai.Client(api_key=GEMINI_API_KEY)
     
     video_list = []
@@ -146,6 +146,8 @@ def extract_content_full_urls():
             menu_links.append(full_url)
 
     #print(menu_links)
+    if not os.path.exists("data"):
+        os.makedirs("data")
 
     for  url in menu_links:
         response = requests.get(url)
@@ -193,7 +195,7 @@ def criar_agente_last_war(question: str):
     Returns:
         str: A resposta gerada pelo agente Gemini.
     """
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    #GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     #genai.configure(api_key=GEMINI_API_KEY)
     client = genai.Client(api_key=GEMINI_API_KEY)
     #model = genai.GenerativeModel("gemini-2.5-flash")
@@ -295,7 +297,7 @@ if __name__ == "__main__":
     print("Bem-vindo ao Agente LastWar com Gemini!")
     # if DISCORD_TOKEN:
     #     bot.run(DISCORD_TOKEN)
-    remover_todos_arquivos_gemini()
+    #remover_todos_arquivos_gemini()
     #checks_existing_files()
     #extract_content_video_youtube(channel_id="UCTPO_RQYtYML32UWEHrLiOg")
     #criar_agente_last_war()
