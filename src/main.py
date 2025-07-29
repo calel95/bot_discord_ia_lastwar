@@ -37,10 +37,10 @@ def checks_existing_files():
     client = genai.Client(api_key=GEMINI_API_KEY)
     arquivos_existentes = list(client.files.list())
 
-    if not arquivos_existentes:
-        print("Nenhum arquivo carregado. Carregando arquivos...")
-
     print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
+    #return print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
+
+    return len(arquivos_existentes)
     
     
 
@@ -182,6 +182,9 @@ def carrega_arquivos_como_fonte():
         print(f"Arquivo {file} carregado como '{uploaded_file.name}'.  carregado com sucesso!")
         #sys.stdout.flush()
         arquivos_carregados.append(uploaded_file)
+
+    print(f"Total de arquivos carregados: {len(arquivos_carregados)}")
+
     return arquivos_carregados
     
 
@@ -206,13 +209,19 @@ def criar_agente_last_war(question: str):
         print("Nenhum arquivo carregado. Carregando arquivos...")
         arquivos_existentes = carrega_arquivos_como_fonte()
 
-    print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
+    #print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
     #question = input("Digite sua pergunta sobre LastWar: ")
 
+    # prompt = (
+    #     "Você é um especialista em Last War: Survival. "
+    #     "Responda baseado APENAS nas informações dos documentos fornecidos. "
+    #     f"Pergunta: {question}"
+    # )
+
     prompt = (
-        "Você é um especialista em Last War: Survival. "
-        "Responda baseado APENAS nas informações dos documentos fornecidos. "
-        f"Pergunta: {question}"
+        "You are an expert in Last War: Survival. "
+        "Answer based ONLY on the information in the documents provided. "
+        f"Question: {question}"
     )
 
     content_parts = [prompt] + arquivos_existentes
@@ -270,13 +279,13 @@ async def on_message(message):
     if bot.user.mentioned_in(message) and not message.mention_everyone:
         question = message.content.replace(f'<@{bot.user.id}>', '').strip()
         if question:
-            await message.channel.send(f"Olá {message.author.mention}! Me perguntou: '{question}'")
-            await message.channel.send("Estou processando sua pergunta sobre Last War: Mobile...")
+            await message.channel.send(f"Hi {message.author.mention}! Asked me: '{question}'")
+            await message.channel.send("I'm processing your question about Last War: Mobile...")
 
             try:
                 # Use sua função de IA aqui
                 bot_answer = criar_agente_last_war(question=question)
-                await message.channel.send(f"{message.author.mention}, aqui está a resposta: {bot_answer}")
+                await message.channel.send(f"{message.author.mention}, here is the answer: {bot_answer}")
 
             except Exception as e:
                 await message.channel.send(f"Desculpe, {message.author.mention}, houve um erro ao processar sua pergunta: `{e}`")
@@ -285,18 +294,32 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-@bot.command(name='teste')
+@bot.command(name='test')
 async def ping(ctx):
     """
     Comando de teste para verificar se o bot está online e respondendo.
     Uso: !teste
     """
-    await ctx.send('Testado com sucesso!!')
+    await ctx.send('Bot in operation!!')
+
+@bot.command(name='check')
+async def carregar_dados_cmd(ctx):
+    """Comando para carregar os dados de Last War para o Gemini."""
+    await ctx.send("Checking sources...")
+    try:
+        x = int(checks_existing_files())
+        if x > 0:
+            await ctx.send(f"Arquives in data source.")
+        else:
+            await ctx.send("No files found in data source. Please request upload files first.")
+
+    except Exception as e:
+        await ctx.send(f"Erro ao checking sources: `{e}`")
 
 if __name__ == "__main__":
     print("Bem-vindo ao Agente LastWar com Gemini!")
-    # if DISCORD_TOKEN:
-    #     bot.run(DISCORD_TOKEN)
+    if DISCORD_TOKEN:
+        bot.run(DISCORD_TOKEN)
     #remover_todos_arquivos_gemini()
     #checks_existing_files()
     #extract_content_video_youtube(channel_id="UCTPO_RQYtYML32UWEHrLiOg")
