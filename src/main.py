@@ -6,17 +6,126 @@ from google import genai
 from google.genai import types
 from bs4 import BeautifulSoup
 import requests
-import csv
-import re
 from pathlib import Path
 import discord
 from discord.ext import commands
+from googleapiclient.discovery import build
+import time
+
 
 #print(dir(genai))
 # --- Configuração da API Key ---
 load_dotenv()
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# YouTube Data API
+
+def checks_existing_files():
+    """
+    Cria um agente LastWar que responde perguntas sobre o jogo Last War: Survival
+    usando a API Gemini.
+    A função espera que os dados de base já estejam carregados no Gemini File API. Qualquer coisa enviar os dados local antes
+    Args:
+        campo (str): A pergunta do usuário.
+    Returns:
+        str: A resposta gerada pelo agente Gemini.
+    """
+
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    arquivos_existentes = list(client.files.list())
+
+    if not arquivos_existentes:
+        print("Nenhum arquivo carregado. Carregando arquivos...")
+
+    print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
+    
+    
+
+# Buscar vídeos de um canal
+def extract_content_video_youtube(channel_id=None, video_urls=None, max_videos=2):
+    """
+    Processa vídeos do YouTube diretamente com Gemini e salva como arquivos de texto.
+    
+    Args:
+        channel_id (str): ID do canal (opcional)
+        video_urls (list): Lista de URLs de vídeos específicos (opcional)
+        max_videos (int): Número máximo de vídeos para processar do canal
+    """
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    
+    video_list = []
+    video_titles = []
+    
+    if channel_id and YOUTUBE_API_KEY:
+        # Buscar vídeos do canal
+        youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+        try:
+            request = youtube.search().list(
+                part='snippet',
+                channelId=channel_id,
+                maxResults=max_videos,
+                order='date',
+                type='video'
+            )
+            response = request.execute()
+            
+            for video in response['items']:
+                video_id = video['id']['videoId']
+                video_title = video['snippet']['title']
+                video_url = f"https://www.youtube.com/watch?v={video_id}"
+                video_list.append(video_url)
+                video_titles.append(video_title)
+                
+        except Exception as e:
+            print(f"Erro ao buscar vídeos do canal: {e}")
+            return
+    
+    # Criar pasta para dados processados pelo Gemini
+    #gemini_data_path = Path('./data/gemini_youtube')
+    #gemini_data_path.mkdir(parents=True, exist_ok=True)
+    
+    for i, video_url in enumerate(video_list):
+        try:
+            print(f"Processando vídeo {video_url} - {video_titles[i]}")
+            
+            # Processar vídeo com Gemini
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[
+                    "Analise este vídeo do YouTube e forneça um resumo detalhado do conteúdo, "
+                    "incluindo pontos principais, estratégias mencionadas, dicas importantes e "
+                    "qualquer informação relevante sobre Last War: Survival. "
+                    "Organize a informação de forma clara e estruturada:",
+                    video_url
+                ],
+                config={
+                    "temperature": 0.3,
+                }
+            )
+            
+            # Extrair ID do vídeo da URL
+            video_id = video_url.split('watch?v=')[1].split('&')[0] if 'watch?v=' in video_url else f"video_{video_title}"
+            
+            filename = f"data/YOUTUBE-{video_titles[i]}_{video_id}.txt"
+            
+            with open(filename, "w", encoding="utf-8") as arquivo:
+                arquivo.write(f"URL DO VÍDEO: {video_url}\n\n")
+                arquivo.write("CONTEÚDO PROCESSADO PELO GEMINI:\n\n")
+                arquivo.write(response.text)
+            
+            print(f"Vídeo processado e salvo em: {filename}")
+            
+            # Pausa para evitar rate limiting
+            time.sleep(2)
+            
+        except Exception as e:
+            print(f"Erro ao processar vídeo {video_url}: {e}")
+            continue
+    
 
 def extract_content_full_urls():
     """
@@ -126,17 +235,16 @@ def remover_todos_arquivos_gemini():
     Remove todos os arquivos carregados no Gemini File API.
     Ação requer confirmação do usuário no console.
     """
-    
     client = genai.Client()
-    arquivos = client.files.list()
+    arquivos = list(client.files.list())
     print(f"Encontrados {len(arquivos)} arquivos...")
-    for arquivo in arquivos:
-        print(arquivo.name)
+    # for arquivo in arquivos:
+    #     print(arquivo.name)
 
     confirmacao = input("Deseja remover todos os arquivos? (s/n): ")
     if confirmacao.lower() == 's':
         for arquivo in arquivos:
-            client.files.delete(arquivo.name)
+            client.files.delete(name=arquivo.name)
             print(f"Arquivo {arquivo.name} removido com sucesso!")
 
 intents = discord.Intents.default()
@@ -187,9 +295,12 @@ if __name__ == "__main__":
     print("Bem-vindo ao Agente LastWar com Gemini!")
     # if DISCORD_TOKEN:
     #     bot.run(DISCORD_TOKEN)
+    remover_todos_arquivos_gemini()
+    #checks_existing_files()
+    #extract_content_video_youtube(channel_id="UCTPO_RQYtYML32UWEHrLiOg")
     #criar_agente_last_war()
     #carrega_arquivos_como_fonte()
-    extract_content_full_urls()
+    #extract_content_full_urls()
 
     # conteudo = t2()
     # nome_do_arquivo = "data/meu_arquivo.txt"
