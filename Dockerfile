@@ -21,6 +21,7 @@ WORKDIR /app
 COPY pyproject.toml /app/
 COPY README.md  /app/
 COPY src /app/src
+COPY data /app/data
 
 ENV PYTHONPATH=/app/src:${PYTHONPATH}
 # Instala dependências com poetry sem criar virtualenv

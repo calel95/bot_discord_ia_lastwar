@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from urllib.parse import urljoin
 from google import genai
 from google.genai import types
+from google.api_core import exceptions
 from bs4 import BeautifulSoup
 import requests
 from pathlib import Path
@@ -39,7 +40,7 @@ def checks_existing_files():
     """
 
     #client = genai.Client(api_key=GEMINI_API_KEY)
-    #arquivos_existentes = list(client.files.list())
+    arquivos_existentes = list(client.files.list())
 
     print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
     #return print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
@@ -222,31 +223,36 @@ def criar_agente_last_war(question: str):
     #     f"Pergunta: {question}"
     # )
 
-    prompt = (
-        "You are an expert in Last War: Survival. "
-        "Answer based ONLY on the information in the documents provided. "
-        f"Question: {question}"
-    )
+    try:
+        prompt = (
+            "You are an expert in Last War: Survival. "
+            "Answer based ONLY on the information in the documents provided. "
+            f"Question: {question}"
+        )
 
-    content_parts = [prompt] + arquivos_existentes
+        content_parts = [prompt] + arquivos_existentes
 
-#     count_tokens = client.models.generate_content(
-#     model="gemini-2.5-flash", contents=prompt
-# )
+    #     count_tokens = client.models.generate_content(
+    #     model="gemini-2.5-flash", contents=prompt
+    # )
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=content_parts,
-        config={           
-            #"max_output_tokens": 500,
-            "temperature": 0.7,
-        }
-    )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=content_parts,
+            config={           
+                #"max_output_tokens": 500,
+                "temperature": 0.7,
+            }
+        )
 
-    resposta_chat = response.text
-    print("\nResposta do Agente LastWar:")
-    print(resposta_chat)
-    print("-" * 50)
+        resposta_chat = response.text
+        print("\nResposta do Agente LastWar:")
+        print(resposta_chat)
+        print("-" * 50)
+    except exceptions.PermissionDenied as e:
+        print(f"Erro de permissão ou arquivos fonrtes nao encontrados: {e}")
+        resposta_chat = "Sorry, missing permission or files not found in source."
+
     #print(count_tokens.usage_metadata)
 
     return resposta_chat
