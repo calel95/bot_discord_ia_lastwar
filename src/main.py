@@ -115,7 +115,7 @@ def extract_content_video_youtube(channel_id=None, video_urls=None, max_videos=2
             # Extrair ID do vídeo da URL
             video_id = video_url.split('watch?v=')[1].split('&')[0] if 'watch?v=' in video_url else f"video_{video_title}"
             
-            filename = f"data/YOUTUBE-{video_titles[i]}_{video_id}.txt"
+            filename = f"/app/data/YOUTUBE-{video_titles[i]}_{video_id}.txt"
             
             with open(filename, "w", encoding="utf-8") as arquivo:
                 arquivo.write(f"URL DO VÍDEO: {video_url}\n\n")
@@ -140,19 +140,21 @@ def extract_content_full_urls():
     response = requests.get(base_url)
     soup = BeautifulSoup(response.text, "html.parser")
 
+    DATA_DIR = '/app/data' 
+
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
+    
     menu_links = []
     for a_tag in soup.find_all("a", href=True):
         href = a_tag['href']
-        # Filtrar apenas links internos relevantes do menu
-    #if any(section in href for section in ['heroes', 'squads', 'buildings']):
         full_url = urljoin(base_url, href)
         if  ".com/" in full_url and not "#" in full_url and not "play.google.com" in full_url and not "apps.apple.com" in full_url:
             #print(full_url)
             menu_links.append(full_url)
 
-    #print(menu_links)
-    if not os.path.exists("data"):
-        os.makedirs("data")
+    # if not os.path.exists("data"):
+    #     os.makedirs("data")
 
     for  url in menu_links:
         response = requests.get(url)
@@ -162,7 +164,7 @@ def extract_content_full_urls():
         trata_nome_url = (url.split('.com/', 1)[1]).replace('/', '')
         if not trata_nome_url:
             trata_nome_url = "index"
-        nome_do_arquivo = f"data/{trata_nome_url}.txt"
+        nome_do_arquivo = f"/app/data/{trata_nome_url}.txt"
 
         with open(nome_do_arquivo, "w", encoding="utf-8") as arquivo:
             for section in section_soup:
@@ -175,7 +177,7 @@ def extract_content_full_urls():
 
 def carrega_arquivos_como_fonte():
     
-    caminho_pasta = Path('./data')
+    caminho_pasta = Path('/app/data/')
 
     arquivos = [file.name for file in caminho_pasta.iterdir() if file.is_file()]
     arquivos_carregados = []

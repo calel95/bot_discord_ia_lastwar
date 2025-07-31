@@ -27,5 +27,4 @@ apache-airflow = "^3.0.3"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.taskipy.tasks]
-test = "lsof -ti :8501 | xargs kill -9 | pytest tests -v"
+
