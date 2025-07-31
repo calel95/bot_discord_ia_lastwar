@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from urllib.parse import urljoin
 from google import genai
 from google.genai import types
+from google.api_core import exceptions
 from bs4 import BeautifulSoup
 import requests
 from pathlib import Path
@@ -11,6 +12,7 @@ import discord
 from discord.ext import commands
 from googleapiclient.discovery import build
 import time
+import asyncio
 
 
 #print(dir(genai))
@@ -20,6 +22,9 @@ load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+client = genai.Client(api_key=GEMINI_API_KEY)
+arquivos_existentes = list(client.files.list())
 
 # YouTube Data API
 
@@ -34,7 +39,7 @@ def checks_existing_files():
         str: A resposta gerada pelo agente Gemini.
     """
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    #client = genai.Client(api_key=GEMINI_API_KEY)
     arquivos_existentes = list(client.files.list())
 
     print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
@@ -55,7 +60,7 @@ def extract_content_video_youtube(channel_id=None, video_urls=None, max_videos=2
         max_videos (int): Número máximo de vídeos para processar do canal
     """
     #GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    #client = genai.Client(api_key=GEMINI_API_KEY)
     
     video_list = []
     video_titles = []
@@ -200,14 +205,14 @@ def criar_agente_last_war(question: str):
     """
     #GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     #genai.configure(api_key=GEMINI_API_KEY)
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    #client = genai.Client(api_key=GEMINI_API_KEY)
     #model = genai.GenerativeModel("gemini-2.5-flash")
-    arquivos_existentes = list(client.files.list())
+    #arquivos_existentes = list(client.files.list())
     #print(arquivos_existentes)
 
-    if not arquivos_existentes:
-        print("Nenhum arquivo carregado. Carregando arquivos...")
-        arquivos_existentes = carrega_arquivos_como_fonte()
+    # if not arquivos_existentes:
+    #     print("Nenhum arquivo carregado. Carregando arquivos...")
+    #     arquivos_existentes = carrega_arquivos_como_fonte()
 
     #print(f"Encontrados {len(arquivos_existentes)} arquivos carregados.")
     #question = input("Digite sua pergunta sobre LastWar: ")
@@ -218,27 +223,37 @@ def criar_agente_last_war(question: str):
     #     f"Pergunta: {question}"
     # )
 
-    prompt = (
-        "You are an expert in Last War: Survival. "
-        "Answer based ONLY on the information in the documents provided. "
-        f"Question: {question}"
-    )
+    try:
+        prompt = (
+            "You are an expert in Last War: Survival. "
+            "Answer based ONLY on the information in the documents provided. "
+            f"Question: {question}"
+        )
 
-    content_parts = [prompt] + arquivos_existentes
+        content_parts = [prompt] + arquivos_existentes
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=content_parts,
-        config={           
-            #"max_output_tokens": 500,
-            "temperature": 0.7,
-        }
-    )
+    #     count_tokens = client.models.generate_content(
+    #     model="gemini-2.5-flash", contents=prompt
+    # )
 
-    resposta_chat = response.text
-    print("\nResposta do Agente LastWar:")
-    print(resposta_chat)
-    print("-" * 50)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=content_parts,
+            config={           
+                #"max_output_tokens": 500,
+                "temperature": 0.7,
+            }
+        )
+
+        resposta_chat = response.text
+        print("\nResposta do Agente LastWar:")
+        print(resposta_chat)
+        print("-" * 50)
+    except exceptions.PermissionDenied as e:
+        print(f"Erro de permissão ou arquivos fonrtes nao encontrados: {e}")
+        resposta_chat = "Sorry, missing permission or files not found in source."
+
+    #print(count_tokens.usage_metadata)
 
     return resposta_chat
 def remover_todos_arquivos_gemini():
@@ -252,11 +267,11 @@ def remover_todos_arquivos_gemini():
     # for arquivo in arquivos:
     #     print(arquivo.name)
 
-    confirmacao = input("Deseja remover todos os arquivos? (s/n): ")
-    if confirmacao.lower() == 's':
-        for arquivo in arquivos:
-            client.files.delete(name=arquivo.name)
-            print(f"Arquivo {arquivo.name} removido com sucesso!")
+    # confirmacao = input("Deseja remover todos os arquivos? (s/n): ")
+    # if confirmacao.lower() == 's':
+    for arquivo in arquivos:
+        client.files.delete(name=arquivo.name)
+        print(f"Arquivo {arquivo.name} removido com sucesso!")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -269,6 +284,7 @@ async def on_ready():
     """Evento que é disparado quando o bot se conecta ao Discord."""
     print(f'Bot logado como {bot.user.name} ({bot.user.id})')
     print('Pronto para receber comandos!')
+
 
 @bot.event
 async def on_message(message):
