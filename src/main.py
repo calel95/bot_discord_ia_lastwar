@@ -23,6 +23,8 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+DATA_DIR = "/app/data"
+
 client = genai.Client(api_key=GEMINI_API_KEY)
 arquivos_existentes = list(client.files.list())
 
@@ -115,7 +117,7 @@ def extract_content_video_youtube(channel_id=None, video_urls=None, max_videos=2
             # Extrair ID do vídeo da URL
             video_id = video_url.split('watch?v=')[1].split('&')[0] if 'watch?v=' in video_url else f"video_{video_title}"
             
-            filename = f"data/YOUTUBE-{video_titles[i]}_{video_id}.txt"
+            filename = f"{DATA_DIR}/YOUTUBE-{video_titles[i]}_{video_id}.txt"
             
             with open(filename, "w", encoding="utf-8") as arquivo:
                 arquivo.write(f"URL DO VÍDEO: {video_url}\n\n")
@@ -151,8 +153,10 @@ def extract_content_full_urls():
             menu_links.append(full_url)
 
     #print(menu_links)
-    if not os.path.exists("data"):
-        os.makedirs("data")
+
+    
+    if not os.path.exists(DATA_DIR):
+        os.makedirs(DATA_DIR)
 
     for  url in menu_links:
         response = requests.get(url)
@@ -175,7 +179,7 @@ def extract_content_full_urls():
 
 def carrega_arquivos_como_fonte():
     
-    caminho_pasta = Path('./data')
+    caminho_pasta = Path(DATA_DIR)
 
     arquivos = [file.name for file in caminho_pasta.iterdir() if file.is_file()]
     arquivos_carregados = []

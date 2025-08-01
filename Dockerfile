@@ -20,6 +20,8 @@ WORKDIR /app
 # Copia somente os arquivos de dependências para cache
 COPY pyproject.toml /app/
 COPY README.md  /app/
+COPY start_bot.sh  /app/
+COPY start_airflow.sh  /app/
 COPY src /app/src
 COPY data /app/data
 

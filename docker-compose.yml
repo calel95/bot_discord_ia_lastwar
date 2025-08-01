@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  discord-bot:
+    build: .
+    container_name: discord_bot
+    command: ./start_bot.sh
+    volumes:
+      - data-volume:/app/data
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}  # passe suas variáveis de ambiente aqui
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+
+  airflow-webserver:
+    build: .
+    container_name: airflow_webserver
+    command: airflow db migrate & airflow api-server --port 8081
+    ports:
+      - "8081:8081"  # expõe a UI do airflow na porta 8080 local
+    volumes:
+      - data-volume:/app/data
+
+  airflow-scheduler:
+    build: .
+    container_name: airflow_scheduler
+    command: ./start_airflow.sh
+    volumes:
+      - data-volume:/app/data
+volumes:
+  data-volume:
